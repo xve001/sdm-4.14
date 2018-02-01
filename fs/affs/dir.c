@@ -80,7 +80,7 @@ affs_readdir(struct file *file, struct dir_context *ctx)
 	 * we can jump directly to where we left off.
 	 */
 	ino = (u32)(long)file->private_data;
-	if (ino && file->f_version == inode->i_version) {
+	if (ino && inode_eq_iversion(inode, file->f_version)) {
 		pr_debug("readdir() left off=%d\n", ino);
 		goto inside;
 	}
