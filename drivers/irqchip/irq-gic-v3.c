@@ -41,6 +41,11 @@
 #include <asm/smp_plat.h>
 #include <asm/virt.h>
 
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+#include <oplus/oplus_wakelock_profiler.h>
+#include <net/oplus_nwpower.h>
+#endif
+
 #include <linux/syscore_ops.h>
 #include <linux/suspend.h>
 #include <linux/notifier.h>
@@ -449,6 +454,10 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 	if (base == NULL)
 		return;
 
+#ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+        wakeup_reasons_statics(IRQ_NAME_WAKE_SUM, WS_CNT_SUM);
+#endif
+
 	for (i = 0; i * 32 < gic->irq_nr; i++) {
 		enabled = readl_relaxed(base + GICD_ICENABLER + i * 4);
 		pending[i] = readl_relaxed(base + GICD_ISPENDR + i * 4);
@@ -470,6 +479,21 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		if (msm_show_resume_irq_mask)
 			pr_warn("%s: %d triggered %s\n", __func__, irq, name);
 		log_irq_wakeup_reason(irq);
+                #ifdef CONFIG_OPLUS_WAKELOCK_PROFILER
+                do {
+                        int platform_id = get_cached_platform_id();
+                        if (platform_id == KONA) {
+                                if (irq >= 154 && irq <= 185) {
+                                        name = IRQ_NAME_MODEM_QMI;
+                                        oplus_match_modem_wakeup();
+                                } else if (irq >= 85 && irq <= 116) {
+                                        name = IRQ_NAME_WLAN_IPCC_DATA;
+                                        oplus_match_wlan_wakeup();
+                                }
+                        }
+                        wakeup_reasons_statics(name, WS_CNT_MODEM|WS_CNT_WLAN|WS_CNT_ADSP|WS_CNT_CDSP|WS_CNT_SLPI);
+                } while(0);
+                #endif
 	}
 }
 
