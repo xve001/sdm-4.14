@@ -2,10 +2,12 @@ name: Build Kernel
 
 on:
   push:
-
+    branches:
+      - test
+  
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -14,21 +16,43 @@ jobs:
       - name: Setup timezone
         uses: szenius/set-timezone@master
         with:
-          timezoneLinux: "America/Sao_Paulo"
+          timezoneLinux: "Asia/Jakarta"
 
       - name: Run standard build script
         run: |
-          export KBUILD_BUILD_USER=nobody
-          export KBUILD_BUILD_HOST=android-build
+          export KBUILD_BUILD_USER=v
+          export KBUILD_BUILD_HOST=paradise
           source build.sh
-          echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_ENV
+          echo "ZIPNAME=${ZIPNAME}" >> $GITHUB_ENV 
+
+      - name: Run Setup KSU
+        run: |
+          curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next-susfs/kernel/setup.sh" | bash -s next-susfs
+          git clone -b kernel-4.14 https://gitlab.com/xvergilantte/susfs4ksu.git
+          cp -v susfs4ksu/kernel_patches/fs/* fs
+          cp -v susfs4ksu/kernel_patches/include/linux/* include/linux
+          cp -v susfs4ksu/kernel_patches/50_add_susfs_in_kernel-4.14.patch .
+          cp -v susfs4ksu/kernel_patches/backport-fs-upstream-susfs-v1.5.7-non-gki.patch .
+          patch -p1 --no-backup-if-mismatch < 50_add_susfs_in_kernel-4.14.patch
+          patch -p1 --no-backup-if-mismatch < backport-fs-upstream-susfs-v1.5.7-non-gki.patch
+          cd KernelSU-Next
+          wget -L https://raw.githubusercontent.com/xvergilantte/Files/refs/heads/main/0001-add-other-ksu-manager-support.patch
+          patch -p1 --no-backup-if-mismatch < 0001-add-other-ksu-manager-support.patch
+          cd ..
 
       - name: Run KSU build script
         run: |
-          export KBUILD_BUILD_USER=nobody
-          export KBUILD_BUILD_HOST=android-build
+          export KBUILD_BUILD_USER=v
+          export KBUILD_BUILD_HOST=paradise
           source build.sh --su
           echo "ZIPNAME_KSU=${ZIPNAME}" >> $GITHUB_ENV
+
+      - name: Run KSUSUSFS build script
+        run: |
+          export KBUILD_BUILD_USER=v
+          export KBUILD_BUILD_HOST=paradise
+          source build.sh --susus
+          echo "ZIPNAME_KSUSUSFS=${ZIPNAME}" >> $GITHUB_ENV 
 
       - name: Upload standard artifact
         uses: actions/upload-artifact@main
@@ -42,23 +66,8 @@ jobs:
           name: KSU-artifact
           path: ${{ env.ZIPNAME_KSU }}
 
-      - name: Create Telegram caption
-        run: |
-          BUILD_DATE="$(date '+%H:%M %d/%m/%Y')"
-          HEAD="$(git rev-parse HEAD)"
-          HEAD_COMMIT="https://github.com/rd-stuffs/msm-4.14/commit/$HEAD"
-          echo -e "${BUILD_DATE}\n\n${HEAD_COMMIT}" > caption.txt
-
-      - name: Upload standard build to Telegram
-        run: |
-          caption=$(<caption.txt)
-          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
-          -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-          -F document=@"${{ env.ZIPNAME }}" \
-          -F caption="${caption}"
-
-      - name: Upload KSU build to Telegram
-        run: |
-          curl -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendDocument" \
-          -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
-          -F document=@"${{ env.ZIPNAME_KSU }}"
+      - name: Upload KSUSUSFS artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: KSUSUSFS-artifact
+          path: ${{ env.ZIPNAME_KSUSUSFS }}
