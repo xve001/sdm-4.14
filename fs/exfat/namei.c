@@ -706,7 +706,7 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	if (ei->version != (inode_peek_iversion_raw(dir) & 0xffffffff)) {
 #else
-	if (ei->version != (dir->i_version & 0xffffffff)) {
+	if (ei->version != (atomic64_read(&dir->i_version) & 0xffffffff)) {
 #endif
 		ei->hint_stat.clu = cdir.dir;
 		ei->hint_stat.eidx = 0;
@@ -1204,7 +1204,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	exfat_d_version_set(dentry, inode_query_iversion(dir));
 #else
-	exfat_d_version_set(dentry, dir->i_version);
+	exfat_d_version_set(dentry, atomic64_read(&dir->i_version));
 #endif
 unlock:
 	mutex_unlock(&EXFAT_SB(inode->i_sb)->s_lock);
