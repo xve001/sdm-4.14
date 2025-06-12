@@ -2646,7 +2646,7 @@ mft_rec_already_initialized:
 		 * file so that the file can be updated if necessary (compare
 		 * with f_version).
 		 */
-		vi->i_version = 1;
+		atomic64_set(&vi->i_version, 1);
 
 		/* The owner and group come from the ntfs volume. */
 		vi->i_uid = vol->uid;
