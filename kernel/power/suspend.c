@@ -636,7 +636,7 @@ static void sys_sync_work_func(struct work_struct *work)
 {
     trace_suspend_resume(TPS("sync_filesystems"), 0, true);
     pr_info(KERN_INFO "PM: Syncing filesystems ... ");
-    ksys_sync();
+    sys_sync();
     pr_cont("done.\n");
     trace_suspend_resume(TPS("sync_filesystems"), 0, false);
     sys_sync_completed = true;
