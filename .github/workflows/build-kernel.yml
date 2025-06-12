@@ -3,7 +3,7 @@ name: Build Kernel
 on:
   push:
     branches:
-      - personal
+      - oplus
   
 jobs:
   build:
