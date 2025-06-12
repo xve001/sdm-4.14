@@ -655,7 +655,7 @@ static int exfat_fill_inode(struct inode *inode, struct exfat_dir_entry *info)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_inc_iversion(inode);
 #else
-	inode->i_version++;
+	atomic64_inc(&inode->i_version);
 #endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 	inode->i_generation = get_random_u32();
@@ -730,7 +730,7 @@ struct inode *exfat_build_inode(struct super_block *sb,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_set_iversion(inode, 1);
 #else
-	inode->i_version = 1;
+	atomic64_set(&inode->i_version, 1);
 #endif
 	err = exfat_fill_inode(inode, info);
 	if (err) {
