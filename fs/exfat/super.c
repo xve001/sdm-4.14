@@ -637,7 +637,7 @@ static int exfat_read_root(struct inode *inode)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_inc_iversion(inode);
 #else
-	inode->i_version++;
+	atomic64_inc(&inode->i_version);
 #endif
 	inode->i_generation = 0;
 	inode->i_mode = exfat_make_mode(sbi, EXFAT_ATTR_SUBDIR, 0777);
@@ -1019,7 +1019,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0)
 	inode_set_iversion(root_inode, 1);
 #else
-	root_inode->i_version = 1;
+	atomic64_set(&root_inode->i_version, 1);
 #endif
 	err = exfat_read_root(root_inode);
 	if (err) {
