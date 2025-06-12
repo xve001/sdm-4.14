@@ -1056,7 +1056,7 @@ int fat_remove_entries(struct inode *dir, struct fat_slot_info *sinfo)
 	brelse(bh);
 	if (err)
 		return err;
-	dir->i_version++;
+	atomic64_inc(&dir->i_version);
 
 	if (nr_slots) {
 		/*
