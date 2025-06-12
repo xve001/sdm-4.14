@@ -480,7 +480,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 			} else
 				mark_inode_dirty(old_inode);
 
-			old_dir->i_version++;
+			atomic64_inc(&old_dir->i_version);
 			old_dir->i_ctime = old_dir->i_mtime = current_time(old_dir);
 			if (IS_DIRSYNC(old_dir))
 				(void)fat_sync_inode(old_dir);
@@ -508,7 +508,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 			goto out;
 		new_i_pos = sinfo.i_pos;
 	}
-	new_dir->i_version++;
+	atomic64_inc(&new_dir->i_version);
 
 	fat_detach(old_inode);
 	fat_attach(old_inode, new_i_pos);
@@ -540,7 +540,7 @@ static int do_msdos_rename(struct inode *old_dir, unsigned char *old_name,
 	old_sinfo.bh = NULL;
 	if (err)
 		goto error_dotdot;
-	old_dir->i_version++;
+	atomic64_inc(&old_dir->i_version);
 	old_dir->i_ctime = old_dir->i_mtime = ts;
 	if (IS_DIRSYNC(old_dir))
 		(void)fat_sync_inode(old_dir);
