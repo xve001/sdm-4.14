@@ -406,7 +406,7 @@ static int ext4_sample_last_mounted(struct super_block *sb,
 	if (likely(sbi->s_mount_flags & EXT4_MF_MNTDIR_SAMPLED))
 		return 0;
 
-	if (sb_rdonly(sb) || !sb_start_intwrite_trylock(sb))
+	if (sb_rdonly(sb) || !sb_start_write_trylock(sb))
 		return 0;
 
 	sbi->s_mount_flags |= EXT4_MF_MNTDIR_SAMPLED;
